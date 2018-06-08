@@ -1,4 +1,5 @@
 local lfs = require"lfs" -- luarocks install luafilesystem
+local lbina,luabins = pcall(function() return require"luabins" end)
 
 -- Localization - for speed and awesome!
 local tostring,assert,loadfile,pairs,type,error = tostring,assert,loadfile,pairs,type,error
@@ -11,9 +12,9 @@ local tableInsert,tableConcat = table.insert,table.concat
 --- Solid state for Lua.
 -- @license Public Domain
 -- @author Linus Sjögren <thelinx@unreliablepollution.net>
--- @version 1.2.0
+-- @version 1.3.0
 module("state")
-_VERSION = "1.2.0"
+_VERSION = "1.3.0"
 _AUTHOR = "Linus Sjögren <thelinx@unreliablepollution.net>"
 
 local stateDir = stateDir or ""
@@ -69,14 +70,27 @@ function serializetable(table, d)
     return tableConcat(s)
 end
 
+local function writefile(fid, contents)
+    local fhand = ioOpen(stateDir..fid, "w")
+    fhand:write(contents)
+    fhand:close()
+end
+local function readfile(fid)
+    local fhand,err = ioOpen(stateDir..fid, "r")
+    if not fhand then
+		return nil, err
+	end
+    local s = fhand:read("*all")
+    fhand:close()
+    return s
+end
+
 --- Store a table.
 -- @param id Identifier - used for loading the state later.
 -- @param table The table to store.
 function store(id, table)
-    local fhand = ioOpen(stateDir..id, "w")
     local fcont = "return "..serializetable(table)
-    fhand:write(fcont)
-    fhand:close()
+    writefile(id, fcont)
 end
 
 --- Load a table.
@@ -84,10 +98,33 @@ end
 -- the second value will be an error message.
 -- @param id Identifier - the one you used when saving the table.
 function load(id)
-    local f,e = loadfile(stateDir..id)
-    if f then
-        return f()
-    else
-        return nil,e
-    end
+    local fcont = readfile(id)
+    local func,err = loadstring(fcont)
+    if func then
+		return func()
+	else
+		return nil, err
+	end
+end
+
+luabinsenabled = false
+if lbina then
+	luabinsenabled = true
+	--- Store a table's binary representation.
+	-- Requires LuaBins.
+	-- @param id Identifier - used for loading the state later.
+	-- @param table The table to store.
+	function storebinary(id, table)
+		local fcont = luabins.save(table)
+		writefile(id, fcont)
+	end
+	--- Load a table's binary representation.
+	-- If the load is unsuccessful, the first return value will be nil
+	-- and the second value will be an error message.
+	-- Requires LuaBins.
+	-- @param id Identifier - the one you used when saving the table.
+	function loadbinary(id)
+		local fcont = readfile(id)
+		return luabins.load(fcont)
+	end
 end
