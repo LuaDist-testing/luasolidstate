@@ -1,7 +1,7 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "luasolidstate"
-version = "1.3.0-1"
+version = "1.3.2-1"
 description = {
     summary = "Library for storing and loading data",
     detailed = [[
@@ -18,13 +18,13 @@ dependencies = {
 }
 -- LuaDist source
 source = {
-  tag = "1.3.0-1",
+  tag = "1.3.2-1",
   url = "git://github.com/LuaDist-testing/luasolidstate.git"
 }
 -- Original source
 -- source = {
 --     url = "git://github.com/TheLinx/luaSolidState.git",
---     branch = "1.3.0"
+--     branch = "1.3.2"
 -- }
 build = {
     type = "builtin",

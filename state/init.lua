@@ -2,7 +2,7 @@ local lfs = require"lfs" -- luarocks install luafilesystem
 local lbina,luabins = pcall(function() return require"luabins" end)
 
 -- Localization - for speed and awesome!
-local tostring,assert,loadfile,pairs,type,error = tostring,assert,loadfile,pairs,type,error
+local tostring,assert,loadstring,pairs,type,error = tostring,assert,loadstring,pairs,type,error
 -- Libraries:
 local ioOpen = io.open
 local osGetenv = os.getenv
@@ -12,9 +12,9 @@ local tableInsert,tableConcat = table.insert,table.concat
 --- Solid state for Lua.
 -- @license Public Domain
 -- @author Linus Sjögren <thelinx@unreliablepollution.net>
--- @version 1.3.0
+-- @version 1.3.2
 module("state")
-_VERSION = "1.3.0"
+_VERSION = "1.3.2"
 _AUTHOR = "Linus Sjögren <thelinx@unreliablepollution.net>"
 
 local stateDir = stateDir or ""
@@ -99,6 +99,7 @@ end
 -- @param id Identifier - the one you used when saving the table.
 function load(id)
     local fcont = readfile(id)
+    if not fcont then return nil, "no such save" end
     local func,err = loadstring(fcont)
     if func then
 		return func()
