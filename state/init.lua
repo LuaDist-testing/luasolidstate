@@ -11,8 +11,11 @@ local tableInsert,tableConcat = table.insert,table.concat
 --- Solid state for Lua.
 -- @license Public Domain
 -- @author Linus Sjögren <thelinx@unreliablepollution.net>
--- @version 1.1.0-PREVIEW
+-- @version 1.2.0
 module("state")
+_VERSION = "1.2.0"
+_AUTHOR = "Linus Sjögren <thelinx@unreliablepollution.net>"
+
 local stateDir = stateDir or ""
 if stateDir == "" then
     if osGetenv("HOME") then
@@ -27,7 +30,8 @@ if not lfs.attributes(stateDir) then
     lfs.mkdir(stateDir)
 end
 
-local function serializeValue(v)
+local function serializevalue(v, d)
+    local d = d or {}
     local t = type(v)
     if t == "string" then
         v:gsub("\\\n", "\\n"):gsub("\r", "\\r"):gsub(stringChar(26), "\"..string.char(26)..\"")
@@ -37,23 +41,25 @@ local function serializeValue(v)
     elseif t == "boolean" then
         return stringFormat("%s", tostring(v))
     elseif t == "table" then
-        return stringFormat("%s", i, serializeTable(v))
+        if d[v] then
+            return "{...}"
+        end
+        d[v] = true
+        return stringFormat("%s", serializetable(v, d))
     elseif t == "function" then
         return "loadstring([[\n"..stringDump(v).."\n]])"
     elseif t == "nil" then
         return stringFormat("nil", i)
-    elseif t == "userdata" then
-        error("can't serialize userdata", 4)
-    elseif t == "thread" then
-        error("can't serialize threads", 4)
+    else
+        error("can't serialize variable of type '"..t.."'", 4)
     end
 end
-function serializeTable(table)
+function serializetable(table, d)
     local s = {}
     tableInsert(s, "{")
     for k,v in pairs(table) do
-        tableInsert(s, "["..serializeValue(k).."]=")
-        tableInsert(s, serializeValue(v))
+        tableInsert(s, "["..serializevalue(k, d).."]=")
+        tableInsert(s, serializevalue(v, d))
         tableInsert(s, ",")
     end
     if s[#s] == "," then
@@ -68,7 +74,7 @@ end
 -- @param table The table to store.
 function store(id, table)
     local fhand = ioOpen(stateDir..id, "w")
-    local fcont = "return "..serializeTable(table)
+    local fcont = "return "..serializetable(table)
     fhand:write(fcont)
     fhand:close()
 end
